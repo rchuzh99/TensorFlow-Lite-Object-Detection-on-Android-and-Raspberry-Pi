@@ -2,9 +2,9 @@
 #
 # Author: Evan Juras
 # Date: 9/28/19
-# Description: 
-# This program uses a TensorFlow Lite object detection model to perform object 
-# detection on an image or a folder full of images. It draws boxes and scores 
+# Description:
+# This program uses a TensorFlow Lite object detection model to perform object
+# detection on an image or a folder full of images. It draws boxes and scores
 # around the objects of interest in each image.
 #
 # This code is based off the TensorFlow Lite image classification example at:
@@ -46,7 +46,7 @@ LABELMAP_NAME = args.labels
 min_conf_threshold = float(args.threshold)
 use_TPU = args.edgetpu
 
-# Parse input image name and directory. 
+# Parse input image name and directory.
 IM_NAME = args.image
 IM_DIR = args.imagedir
 
@@ -84,18 +84,18 @@ CWD_PATH = os.getcwd()
 
 # Define path to images and grab all image filenames
 if IM_DIR:
-    PATH_TO_IMAGES = os.path.join(CWD_PATH,IM_DIR)
+    PATH_TO_IMAGES = os.path.join(CWD_PATH, IM_DIR)
     images = glob.glob(PATH_TO_IMAGES + '/*')
 
 elif IM_NAME:
-    PATH_TO_IMAGES = os.path.join(CWD_PATH,IM_NAME)
+    PATH_TO_IMAGES = os.path.join(CWD_PATH, IM_NAME)
     images = glob.glob(PATH_TO_IMAGES)
 
 # Path to .tflite file, which contains the model that is used for object detection
-PATH_TO_CKPT = os.path.join(CWD_PATH,MODEL_NAME,GRAPH_NAME)
+PATH_TO_CKPT = os.path.join(CWD_PATH, MODEL_NAME, GRAPH_NAME)
 
 # Path to label map file
-PATH_TO_LABELS = os.path.join(CWD_PATH,MODEL_NAME,LABELMAP_NAME)
+PATH_TO_LABELS = os.path.join(CWD_PATH, MODEL_NAME, LABELMAP_NAME)
 
 # Load the label map
 with open(PATH_TO_LABELS, 'r') as f:
@@ -135,7 +135,7 @@ for image_path in images:
     # Load image and resize to expected shape [1xHxWx3]
     image = cv2.imread(image_path)
     image_rgb = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    imH, imW, _ = image.shape 
+    imH, imW, _ = image.shape
     image_resized = cv2.resize(image_rgb, (width, height))
     input_data = np.expand_dims(image_resized, axis=0)
 
@@ -144,14 +144,17 @@ for image_path in images:
         input_data = (np.float32(input_data) - input_mean) / input_std
 
     # Perform the actual detection by running the model with the image as input
-    interpreter.set_tensor(input_details[0]['index'],input_data)
+    interpreter.set_tensor(input_details[0]['index'], input_data)
     interpreter.invoke()
 
     # Retrieve detection results
-    boxes = interpreter.get_tensor(output_details[0]['index'])[0] # Bounding box coordinates of detected objects
-    classes = interpreter.get_tensor(output_details[1]['index'])[0] # Class index of detected objects
-    scores = interpreter.get_tensor(output_details[2]['index'])[0] # Confidence of detected objects
-    #num = interpreter.get_tensor(output_details[3]['index'])[0]  # Total number of detected objects (inaccurate and not needed)
+    # Bounding box coordinates of detected objects
+    boxes = interpreter.get_tensor(output_details[0]['index'])[0]
+    classes = interpreter.get_tensor(output_details[1]['index'])[
+        0]  # Class index of detected objects
+    scores = interpreter.get_tensor(output_details[2]['index'])[
+        0]  # Confidence of detected objects
+    # num = interpreter.get_tensor(output_details[3]['index'])[0]  # Total number of detected objects (inaccurate and not needed)
 
     # Loop over all detections and draw detection box if confidence is above minimum threshold
     for i in range(len(scores)):
@@ -159,20 +162,27 @@ for image_path in images:
 
             # Get bounding box coordinates and draw box
             # Interpreter can return coordinates that are outside of image dimensions, need to force them to be within image using max() and min()
-            ymin = int(max(1,(boxes[i][0] * imH)))
-            xmin = int(max(1,(boxes[i][1] * imW)))
-            ymax = int(min(imH,(boxes[i][2] * imH)))
-            xmax = int(min(imW,(boxes[i][3] * imW)))
-            
-            cv2.rectangle(image, (xmin,ymin), (xmax,ymax), (10, 255, 0), 2)
+            ymin = int(max(1, (boxes[i][0] * imH)))
+            xmin = int(max(1, (boxes[i][1] * imW)))
+            ymax = int(min(imH, (boxes[i][2] * imH)))
+            xmax = int(min(imW, (boxes[i][3] * imW)))
+
+            cv2.rectangle(image, (xmin, ymin), (xmax, ymax), (10, 255, 0), 2)
 
             # Draw label
-            object_name = labels[int(classes[i])] # Look up object name from "labels" array using class index
-            label = '%s: %d%%' % (object_name, int(scores[i]*100)) # Example: 'person: 72%'
-            labelSize, baseLine = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2) # Get font size
-            label_ymin = max(ymin, labelSize[1] + 10) # Make sure not to draw label too close to top of window
-            cv2.rectangle(image, (xmin, label_ymin-labelSize[1]-10), (xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED) # Draw white box to put label text in
-            cv2.putText(image, label, (xmin, label_ymin-7), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2) # Draw label text
+            # Look up object name from "labels" array using class index
+            object_name = labels[int(classes[i])]
+            label = '%s: %d%%' % (object_name, int(
+                scores[i]*100))  # Example: 'person: 72%'
+            labelSize, baseLine = cv2.getTextSize(
+                label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)  # Get font size
+            # Make sure not to draw label too close to top of window
+            label_ymin = max(ymin, labelSize[1] + 10)
+            # Draw white box to put label text in
+            cv2.rectangle(image, (xmin, label_ymin-labelSize[1]-10), (
+                xmin+labelSize[0], label_ymin+baseLine-10), (255, 255, 255), cv2.FILLED)
+            cv2.putText(image, label, (xmin, label_ymin-7),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 0), 2)  # Draw label text
 
     # All the results have been drawn on the image, now display the image
     cv2.imshow('Object detector', image)
